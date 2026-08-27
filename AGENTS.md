@@ -1,0 +1,1 @@
+Root exports are in `mistral.kujo`; native Mistral code is `src/mistral.kujo`; the AI SDK driver is `src/provider.kujo`. Run `bash scripts/release_quality_gate.sh`. Preserve Mistral reasoning/tool metadata, use immutable dependencies, and do not modify AI SDK core.
