@@ -9,7 +9,10 @@ Mistral chat, embeddings, and provider-native AI services for Kujo.
 ## Install
 
 ```bash
-kujo run /path/to/kennel/kennel.kujo --interpreter -- add github:kujolang/mistral@v0.1.1 --alias mistral
+kujo run /path/to/kennel/kennel.kujo \
+  --interpreter \
+  -- add github:kujolang/mistral@v0.1.1 \
+  --alias mistral
 kujo run /path/to/kennel/kennel.kujo --interpreter -- install
 export MISTRAL_API_KEY=your-key
 ```
