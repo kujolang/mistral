@@ -18,8 +18,20 @@ export MISTRAL_API_KEY=your-key
 
 ```kujo
 from mistral import create_client, client_chat
+
 client := create_client({})
-result := client_chat(client, {"model":"mistral-large-latest","messages":[{"role":"user","content":"Hello from Kujo!"}]})
+request := {
+    "model": "mistral-large-latest",
+    "messages": [
+        {
+            "role": "user",
+            "content": "Hello from Kujo!"
+        }
+    ]
+}
+
+result := client_chat(client, request)
+
 print(result["data"]["choices"][0]["message"]["content"])
 ```
 
