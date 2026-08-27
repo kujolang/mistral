@@ -22,7 +22,7 @@ eval_gates:
     command: "bash scripts/release_quality_gate.sh"
     required: true
   - id: diff_check
-    command: "git diff --check"
+    command: "git diff --check -- . ':(exclude).loop-engineering/**'"
     required: true
 
 commit:

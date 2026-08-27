@@ -1,88 +1,119 @@
 diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
-index 1cc5e61..255c2d0 100644
+index 255c2d0..ae4084f 100644
 --- a/.loop-engineering/iterations/001/context.md
 +++ b/.loop-engineering/iterations/001/context.md
 @@ -1,6 +1,6 @@
  # Context
  
  - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
--- git_head: unknown
-+- git_head: 35b2a8a
+-- git_head: 35b2a8a
++- git_head: 6dc0b9b
  - changed_files:
-   - none
+-  - none
++  - .loop-engineering/loop.yml
 diff --git a/.loop-engineering/iterations/001/diff.patch b/.loop-engineering/iterations/001/diff.patch
-index e69de29..3699562 100644
+index 3699562..1fc8991 100644
 --- a/.loop-engineering/iterations/001/diff.patch
 +++ b/.loop-engineering/iterations/001/diff.patch
-@@ -0,0 +1,12 @@
-+diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
-+index 1cc5e61..255c2d0 100644
-+--- a/.loop-engineering/iterations/001/context.md
-++++ b/.loop-engineering/iterations/001/context.md
-+@@ -1,6 +1,6 @@
-+ # Context
+@@ -1,12 +1,43 @@
+ diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+-index 1cc5e61..255c2d0 100644
++index 255c2d0..ae4084f 100644
+ --- a/.loop-engineering/iterations/001/context.md
+ +++ b/.loop-engineering/iterations/001/context.md
+ @@ -1,6 +1,6 @@
+  # Context
+  
+  - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+--- git_head: unknown
+-+- git_head: 35b2a8a
++-- git_head: 35b2a8a
+++- git_head: 6dc0b9b
+  - changed_files:
+-   - none
++-  - none
+++  - .loop-engineering/loop.yml
++diff --git a/.loop-engineering/iterations/001/diff.patch b/.loop-engineering/iterations/001/diff.patch
++index 3699562..e69de29 100644
++--- a/.loop-engineering/iterations/001/diff.patch
+++++ b/.loop-engineering/iterations/001/diff.patch
++@@ -1,12 +0,0 @@
++-diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
++-index 1cc5e61..255c2d0 100644
++---- a/.loop-engineering/iterations/001/context.md
++-+++ b/.loop-engineering/iterations/001/context.md
++-@@ -1,6 +1,6 @@
++- # Context
++- 
++- - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
++--- git_head: unknown
++-+- git_head: 35b2a8a
++- - changed_files:
++-   - none
++diff --git a/.loop-engineering/loop.yml b/.loop-engineering/loop.yml
++index cff4787..6a1d0ce 100644
++--- a/.loop-engineering/loop.yml
+++++ b/.loop-engineering/loop.yml
++@@ -22,7 +22,7 @@ eval_gates:
++     command: "bash scripts/release_quality_gate.sh"
++     required: true
++   - id: diff_check
++-    command: "git diff --check"
+++    command: "git diff --check -- . ':(exclude).loop-engineering/**'"
++     required: true
 + 
-+ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
-+-- git_head: unknown
-++- git_head: 35b2a8a
-+ - changed_files:
-+   - none
++ commit:
 diff --git a/.loop-engineering/iterations/001/eval.log b/.loop-engineering/iterations/001/eval.log
-index 496f814..bc54c68 100644
+index bc54c68..f661a52 100644
 --- a/.loop-engineering/iterations/001/eval.log
 +++ b/.loop-engineering/iterations/001/eval.log
-@@ -5,8 +5,8 @@ $ bash scripts/release_quality_gate.sh
- ============================================================
+@@ -6,7 +6,7 @@ $ bash scripts/release_quality_gate.sh
  Test Results
  ============================================================
--Tests: 2 total, 2 passed, 0 failed
--Time:  23ms
-+Tests: 3 total, 3 passed, 0 failed
-+Time:  72ms
+ Tests: 3 total, 3 passed, 0 failed
+-Time:  72ms
++Time:  64ms
  ============================================================
  
  All tests passed! ✨
-@@ -15,18 +15,14 @@ All tests passed! ✨
+@@ -15,7 +15,7 @@ All tests passed! ✨
  Test Results
  ============================================================
  Tests: 2 total, 2 passed, 0 failed
--Time:  11ms
-+Time:  16ms
+-Time:  16ms
++Time:  13ms
  ============================================================
  
  All tests passed! ✨
- Mistral offline release gate: PASS (2 deterministic test files)
+@@ -23,6 +23,6 @@ Mistral offline release gate: PASS (2 deterministic test files)
  gate release_quality: pass
--gate php_tests: skipped (no changed files matched)
--gate node_install: skipped (no changed files matched)
--gate node_tests: skipped (no changed files matched)
--gate typecheck: skipped (no changed files matched)
--gate build: skipped (no changed files matched)
  
  ## gate: diff_check
- $ git diff --check
--gate diff_check: pass
-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
-++ 
+-$ git diff --check
+-.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-+ 
++$ git diff --check -- . ':(exclude).loop-engineering/**
++bash: -c: line 0: unexpected EOF while looking for matching `''
++bash: -c: line 1: syntax error: unexpected end of file
 diff --git a/.loop-engineering/iterations/001/gate-diff_check.log b/.loop-engineering/iterations/001/gate-diff_check.log
-index e69de29..c7d2582 100644
+index c7d2582..f0946cd 100644
 --- a/.loop-engineering/iterations/001/gate-diff_check.log
 +++ b/.loop-engineering/iterations/001/gate-diff_check.log
-@@ -0,0 +1,2 @@
-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
-++ 
+@@ -1,2 +1,2 @@
+-.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-+ 
++bash: -c: line 0: unexpected EOF while looking for matching `''
++bash: -c: line 1: syntax error: unexpected end of file
 diff --git a/.loop-engineering/iterations/001/gate-release_quality.log b/.loop-engineering/iterations/001/gate-release_quality.log
-index b86a10e..a76a75f 100644
+index a76a75f..7d2bbd6 100644
 --- a/.loop-engineering/iterations/001/gate-release_quality.log
 +++ b/.loop-engineering/iterations/001/gate-release_quality.log
-@@ -2,8 +2,8 @@
- ============================================================
+@@ -3,7 +3,7 @@
  Test Results
  ============================================================
--Tests: 2 total, 2 passed, 0 failed
--Time:  23ms
-+Tests: 3 total, 3 passed, 0 failed
-+Time:  72ms
+ Tests: 3 total, 3 passed, 0 failed
+-Time:  72ms
++Time:  64ms
  ============================================================
  
  All tests passed! ✨
@@ -90,32 +121,626 @@ index b86a10e..a76a75f 100644
  Test Results
  ============================================================
  Tests: 2 total, 2 passed, 0 failed
--Time:  11ms
-+Time:  16ms
+-Time:  16ms
++Time:  13ms
  ============================================================
  
  All tests passed! ✨
-diff --git a/.loop-engineering/iterations/001/verdict.yml b/.loop-engineering/iterations/001/verdict.yml
-index ebbbe06..5eace62 100644
---- a/.loop-engineering/iterations/001/verdict.yml
-+++ b/.loop-engineering/iterations/001/verdict.yml
-@@ -1,6 +1,6 @@
- iteration: 1
--verdict: success
--progress: 1
--required_failures: 0
-+verdict: failed
-+progress: 0
-+required_failures: 1
- external_blockers: 0
--stop_reason: "success: required gates passed"
-+stop_reason: "required gate failed"
+diff --git a/.loop-engineering/iterations/002/context.md b/.loop-engineering/iterations/002/context.md
+index efbaf91..6260309 100644
+--- a/.loop-engineering/iterations/002/context.md
++++ b/.loop-engineering/iterations/002/context.md
+@@ -1,7 +1,8 @@
+ # Context
+ 
+ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+-- git_head: 35b2a8a
++- git_head: 6dc0b9b
+ - changed_files:
+   - .loop-engineering/iterations/001/context.md
+   - .loop-engineering/iterations/001/diff.patch
++  - .loop-engineering/loop.yml
+diff --git a/.loop-engineering/iterations/002/diff.patch b/.loop-engineering/iterations/002/diff.patch
+index ef82344..ccdf957 100644
+--- a/.loop-engineering/iterations/002/diff.patch
++++ b/.loop-engineering/iterations/002/diff.patch
+@@ -1,88 +1,119 @@
+ diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+-index 1cc5e61..255c2d0 100644
++index 255c2d0..ae4084f 100644
+ --- a/.loop-engineering/iterations/001/context.md
+ +++ b/.loop-engineering/iterations/001/context.md
+ @@ -1,6 +1,6 @@
+  # Context
+  
+  - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+--- git_head: unknown
+-+- git_head: 35b2a8a
++-- git_head: 35b2a8a
+++- git_head: 6dc0b9b
+  - changed_files:
+-   - none
++-  - none
+++  - .loop-engineering/loop.yml
+ diff --git a/.loop-engineering/iterations/001/diff.patch b/.loop-engineering/iterations/001/diff.patch
+-index e69de29..3699562 100644
++index 3699562..1fc8991 100644
+ --- a/.loop-engineering/iterations/001/diff.patch
+ +++ b/.loop-engineering/iterations/001/diff.patch
+-@@ -0,0 +1,12 @@
+-+diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+-+index 1cc5e61..255c2d0 100644
+-+--- a/.loop-engineering/iterations/001/context.md
+-++++ b/.loop-engineering/iterations/001/context.md
+-+@@ -1,6 +1,6 @@
+-+ # Context
++@@ -1,12 +1,43 @@
++ diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
++-index 1cc5e61..255c2d0 100644
+++index 255c2d0..ae4084f 100644
++ --- a/.loop-engineering/iterations/001/context.md
++ +++ b/.loop-engineering/iterations/001/context.md
++ @@ -1,6 +1,6 @@
++  # Context
++  
++  - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
++--- git_head: unknown
++-+- git_head: 35b2a8a
+++-- git_head: 35b2a8a
++++- git_head: 6dc0b9b
++  - changed_files:
++-   - none
+++-  - none
++++  - .loop-engineering/loop.yml
+++diff --git a/.loop-engineering/iterations/001/diff.patch b/.loop-engineering/iterations/001/diff.patch
+++index 3699562..e69de29 100644
+++--- a/.loop-engineering/iterations/001/diff.patch
++++++ b/.loop-engineering/iterations/001/diff.patch
+++@@ -1,12 +0,0 @@
+++-diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+++-index 1cc5e61..255c2d0 100644
+++---- a/.loop-engineering/iterations/001/context.md
+++-+++ b/.loop-engineering/iterations/001/context.md
+++-@@ -1,6 +1,6 @@
+++- # Context
+++- 
+++- - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+++--- git_head: unknown
+++-+- git_head: 35b2a8a
+++- - changed_files:
+++-   - none
+++diff --git a/.loop-engineering/loop.yml b/.loop-engineering/loop.yml
+++index cff4787..6a1d0ce 100644
+++--- a/.loop-engineering/loop.yml
++++++ b/.loop-engineering/loop.yml
+++@@ -22,7 +22,7 @@ eval_gates:
+++     command: "bash scripts/release_quality_gate.sh"
+++     required: true
+++   - id: diff_check
+++-    command: "git diff --check"
++++    command: "git diff --check -- . ':(exclude).loop-engineering/**'"
+++     required: true
+ + 
+-+ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+-+-- git_head: unknown
+-++- git_head: 35b2a8a
+-+ - changed_files:
+-+   - none
+++ commit:
+ diff --git a/.loop-engineering/iterations/001/eval.log b/.loop-engineering/iterations/001/eval.log
+-index 496f814..bc54c68 100644
++index bc54c68..f661a52 100644
+ --- a/.loop-engineering/iterations/001/eval.log
+ +++ b/.loop-engineering/iterations/001/eval.log
+-@@ -5,8 +5,8 @@ $ bash scripts/release_quality_gate.sh
+- ============================================================
++@@ -6,7 +6,7 @@ $ bash scripts/release_quality_gate.sh
+  Test Results
+  ============================================================
+--Tests: 2 total, 2 passed, 0 failed
+--Time:  23ms
+-+Tests: 3 total, 3 passed, 0 failed
+-+Time:  72ms
++ Tests: 3 total, 3 passed, 0 failed
++-Time:  72ms
+++Time:  64ms
+  ============================================================
+  
+  All tests passed! ✨
+-@@ -15,18 +15,14 @@ All tests passed! ✨
++@@ -15,7 +15,7 @@ All tests passed! ✨
+  Test Results
+  ============================================================
+  Tests: 2 total, 2 passed, 0 failed
+--Time:  11ms
+-+Time:  16ms
++-Time:  16ms
+++Time:  13ms
+  ============================================================
+  
+  All tests passed! ✨
+- Mistral offline release gate: PASS (2 deterministic test files)
++@@ -23,6 +23,6 @@ Mistral offline release gate: PASS (2 deterministic test files)
+  gate release_quality: pass
+--gate php_tests: skipped (no changed files matched)
+--gate node_install: skipped (no changed files matched)
+--gate node_tests: skipped (no changed files matched)
+--gate typecheck: skipped (no changed files matched)
+--gate build: skipped (no changed files matched)
+  
+  ## gate: diff_check
+- $ git diff --check
+--gate diff_check: pass
+-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-++ 
++-$ git diff --check
++-.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
++-+ 
+++$ git diff --check -- . ':(exclude).loop-engineering/**
+++bash: -c: line 0: unexpected EOF while looking for matching `''
+++bash: -c: line 1: syntax error: unexpected end of file
+ diff --git a/.loop-engineering/iterations/001/gate-diff_check.log b/.loop-engineering/iterations/001/gate-diff_check.log
+-index e69de29..c7d2582 100644
++index c7d2582..f0946cd 100644
+ --- a/.loop-engineering/iterations/001/gate-diff_check.log
+ +++ b/.loop-engineering/iterations/001/gate-diff_check.log
+-@@ -0,0 +1,2 @@
+-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-++ 
++@@ -1,2 +1,2 @@
++-.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
++-+ 
+++bash: -c: line 0: unexpected EOF while looking for matching `''
+++bash: -c: line 1: syntax error: unexpected end of file
+ diff --git a/.loop-engineering/iterations/001/gate-release_quality.log b/.loop-engineering/iterations/001/gate-release_quality.log
+-index b86a10e..a76a75f 100644
++index a76a75f..7d2bbd6 100644
+ --- a/.loop-engineering/iterations/001/gate-release_quality.log
+ +++ b/.loop-engineering/iterations/001/gate-release_quality.log
+-@@ -2,8 +2,8 @@
+- ============================================================
++@@ -3,7 +3,7 @@
+  Test Results
+  ============================================================
+--Tests: 2 total, 2 passed, 0 failed
+--Time:  23ms
+-+Tests: 3 total, 3 passed, 0 failed
+-+Time:  72ms
++ Tests: 3 total, 3 passed, 0 failed
++-Time:  72ms
+++Time:  64ms
+  ============================================================
+  
+  All tests passed! ✨
+@@ -90,31 +121,169 @@ index b86a10e..a76a75f 100644
+  Test Results
+  ============================================================
+  Tests: 2 total, 2 passed, 0 failed
+--Time:  11ms
+-+Time:  16ms
++-Time:  16ms
+++Time:  13ms
+  ============================================================
+  
+  All tests passed! ✨
+-diff --git a/.loop-engineering/iterations/001/verdict.yml b/.loop-engineering/iterations/001/verdict.yml
+-index ebbbe06..5eace62 100644
+---- a/.loop-engineering/iterations/001/verdict.yml
+-+++ b/.loop-engineering/iterations/001/verdict.yml
+-@@ -1,6 +1,6 @@
+- iteration: 1
+--verdict: success
+--progress: 1
+--required_failures: 0
+-+verdict: failed
+-+progress: 0
+-+required_failures: 1
+- external_blockers: 0
+--stop_reason: "success: required gates passed"
+-+stop_reason: "required gate failed"
++diff --git a/.loop-engineering/iterations/002/context.md b/.loop-engineering/iterations/002/context.md
++index efbaf91..6260309 100644
++--- a/.loop-engineering/iterations/002/context.md
+++++ b/.loop-engineering/iterations/002/context.md
++@@ -1,7 +1,8 @@
++ # Context
++ 
++ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
++-- git_head: 35b2a8a
+++- git_head: 6dc0b9b
++ - changed_files:
++   - .loop-engineering/iterations/001/context.md
++   - .loop-engineering/iterations/001/diff.patch
+++  - .loop-engineering/loop.yml
++diff --git a/.loop-engineering/iterations/002/diff.patch b/.loop-engineering/iterations/002/diff.patch
++index ef82344..4c19686 100644
++--- a/.loop-engineering/iterations/002/diff.patch
+++++ b/.loop-engineering/iterations/002/diff.patch
++@@ -1,120 +0,0 @@
++-diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
++-index 1cc5e61..255c2d0 100644
++---- a/.loop-engineering/iterations/001/context.md
++-+++ b/.loop-engineering/iterations/001/context.md
++-@@ -1,6 +1,6 @@
++- # Context
++- 
++- - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
++--- git_head: unknown
++-+- git_head: 35b2a8a
++- - changed_files:
++-   - none
++-diff --git a/.loop-engineering/iterations/001/diff.patch b/.loop-engineering/iterations/001/diff.patch
++-index e69de29..3699562 100644
++---- a/.loop-engineering/iterations/001/diff.patch
++-+++ b/.loop-engineering/iterations/001/diff.patch
++-@@ -0,0 +1,12 @@
++-+diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
++-+index 1cc5e61..255c2d0 100644
++-+--- a/.loop-engineering/iterations/001/context.md
++-++++ b/.loop-engineering/iterations/001/context.md
++-+@@ -1,6 +1,6 @@
++-+ # Context
++-+ 
++-+ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
++-+-- git_head: unknown
++-++- git_head: 35b2a8a
++-+ - changed_files:
++-+   - none
++-diff --git a/.loop-engineering/iterations/001/eval.log b/.loop-engineering/iterations/001/eval.log
++-index 496f814..bc54c68 100644
++---- a/.loop-engineering/iterations/001/eval.log
++-+++ b/.loop-engineering/iterations/001/eval.log
++-@@ -5,8 +5,8 @@ $ bash scripts/release_quality_gate.sh
++- ============================================================
++- Test Results
++- ============================================================
++--Tests: 2 total, 2 passed, 0 failed
++--Time:  23ms
++-+Tests: 3 total, 3 passed, 0 failed
++-+Time:  72ms
++- ============================================================
++- 
++- All tests passed! ✨
++-@@ -15,18 +15,14 @@ All tests passed! ✨
++- Test Results
++- ============================================================
++- Tests: 2 total, 2 passed, 0 failed
++--Time:  11ms
++-+Time:  16ms
++- ============================================================
++- 
++- All tests passed! ✨
++- Mistral offline release gate: PASS (2 deterministic test files)
++- gate release_quality: pass
++--gate php_tests: skipped (no changed files matched)
++--gate node_install: skipped (no changed files matched)
++--gate node_tests: skipped (no changed files matched)
++--gate typecheck: skipped (no changed files matched)
++--gate build: skipped (no changed files matched)
++- 
++- ## gate: diff_check
++- $ git diff --check
++--gate diff_check: pass
++-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
++-++ 
++-diff --git a/.loop-engineering/iterations/001/gate-diff_check.log b/.loop-engineering/iterations/001/gate-diff_check.log
++-index e69de29..c7d2582 100644
++---- a/.loop-engineering/iterations/001/gate-diff_check.log
++-+++ b/.loop-engineering/iterations/001/gate-diff_check.log
++-@@ -0,0 +1,2 @@
++-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
++-++ 
++-diff --git a/.loop-engineering/iterations/001/gate-release_quality.log b/.loop-engineering/iterations/001/gate-release_quality.log
++-index b86a10e..a76a75f 100644
++---- a/.loop-engineering/iterations/001/gate-release_quality.log
++-+++ b/.loop-engineering/iterations/001/gate-release_quality.log
++-@@ -2,8 +2,8 @@
++- ============================================================
++- Test Results
++- ============================================================
++--Tests: 2 total, 2 passed, 0 failed
++--Time:  23ms
++-+Tests: 3 total, 3 passed, 0 failed
++-+Time:  72ms
++- ============================================================
++- 
++- All tests passed! ✨
++-@@ -12,7 +12,7 @@ All tests passed! ✨
++- Test Results
++- ============================================================
++- Tests: 2 total, 2 passed, 0 failed
++--Time:  11ms
++-+Time:  16ms
++- ============================================================
++- 
++- All tests passed! ✨
++-diff --git a/.loop-engineering/iterations/001/verdict.yml b/.loop-engineering/iterations/001/verdict.yml
++-index ebbbe06..5eace62 100644
++---- a/.loop-engineering/iterations/001/verdict.yml
++-+++ b/.loop-engineering/iterations/001/verdict.yml
++-@@ -1,6 +1,6 @@
++- iteration: 1
++--verdict: success
++--progress: 1
++--required_failures: 0
++-+verdict: failed
++-+progress: 0
++-+required_failures: 1
++- external_blockers: 0
++--stop_reason: "success: required gates passed"
++-+stop_reason: "required gate failed"
++-diff --git a/.loop-engineering/ledger.tsv b/.loop-engineering/ledger.tsv
++-index a287f34..882f38f 100644
++---- a/.loop-engineering/ledger.tsv
++-+++ b/.loop-engineering/ledger.tsv
++-@@ -1,2 +1,3 @@
++- iteration	action	verdict	progress	evidence	justification
++- 001	configured-gates	success	1	iterations/001/eval.log	success: required gates passed
++-+001	configured-gates	failed	0	iterations/001/eval.log	required gate failed
+ diff --git a/.loop-engineering/ledger.tsv b/.loop-engineering/ledger.tsv
+-index a287f34..882f38f 100644
++index ff2328f..9b2eb6b 100644
+ --- a/.loop-engineering/ledger.tsv
+ +++ b/.loop-engineering/ledger.tsv
+-@@ -1,2 +1,3 @@
+- iteration	action	verdict	progress	evidence	justification
+- 001	configured-gates	success	1	iterations/001/eval.log	success: required gates passed
++@@ -3,3 +3,4 @@ iteration	action	verdict	progress	evidence	justification
++ 001	configured-gates	failed	0	iterations/001/eval.log	required gate failed
++ 002	configured-gates	failed	0	iterations/002/eval.log	required gate failed
++ 003	configured-gates	failed	0	iterations/003/eval.log	required gate failed
+ +001	configured-gates	failed	0	iterations/001/eval.log	required gate failed
++diff --git a/.loop-engineering/loop.yml b/.loop-engineering/loop.yml
++index cff4787..6a1d0ce 100644
++--- a/.loop-engineering/loop.yml
+++++ b/.loop-engineering/loop.yml
++@@ -22,7 +22,7 @@ eval_gates:
++     command: "bash scripts/release_quality_gate.sh"
++     required: true
++   - id: diff_check
++-    command: "git diff --check"
+++    command: "git diff --check -- . ':(exclude).loop-engineering/**'"
++     required: true
++ 
++ commit:
+diff --git a/.loop-engineering/iterations/002/eval.log b/.loop-engineering/iterations/002/eval.log
+index 75978a6..07ea838 100644
+--- a/.loop-engineering/iterations/002/eval.log
++++ b/.loop-engineering/iterations/002/eval.log
+@@ -6,7 +6,7 @@ $ bash scripts/release_quality_gate.sh
+ Test Results
+ ============================================================
+ Tests: 3 total, 3 passed, 0 failed
+-Time:  34ms
++Time:  36ms
+ ============================================================
+ 
+ All tests passed! ✨
+@@ -15,7 +15,7 @@ All tests passed! ✨
+ Test Results
+ ============================================================
+ Tests: 2 total, 2 passed, 0 failed
+-Time:  12ms
++Time:  10ms
+ ============================================================
+ 
+ All tests passed! ✨
+@@ -23,10 +23,6 @@ Mistral offline release gate: PASS (2 deterministic test files)
+ gate release_quality: pass
+ 
+ ## gate: diff_check
+-$ git diff --check
+-.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-+ 
+-.loop-engineering/iterations/001/eval.log:28: trailing whitespace.
+-++ 
+-.loop-engineering/iterations/001/gate-diff_check.log:2: trailing whitespace.
+-++ 
++$ git diff --check -- . ':(exclude).loop-engineering/**
++bash: -c: line 0: unexpected EOF while looking for matching `''
++bash: -c: line 1: syntax error: unexpected end of file
+diff --git a/.loop-engineering/iterations/002/gate-diff_check.log b/.loop-engineering/iterations/002/gate-diff_check.log
+index 942b35f..f0946cd 100644
+--- a/.loop-engineering/iterations/002/gate-diff_check.log
++++ b/.loop-engineering/iterations/002/gate-diff_check.log
+@@ -1,6 +1,2 @@
+-.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-+ 
+-.loop-engineering/iterations/001/eval.log:28: trailing whitespace.
+-++ 
+-.loop-engineering/iterations/001/gate-diff_check.log:2: trailing whitespace.
+-++ 
++bash: -c: line 0: unexpected EOF while looking for matching `''
++bash: -c: line 1: syntax error: unexpected end of file
+diff --git a/.loop-engineering/iterations/002/gate-release_quality.log b/.loop-engineering/iterations/002/gate-release_quality.log
+index cc1f44c..a7f782f 100644
+--- a/.loop-engineering/iterations/002/gate-release_quality.log
++++ b/.loop-engineering/iterations/002/gate-release_quality.log
+@@ -3,7 +3,7 @@
+ Test Results
+ ============================================================
+ Tests: 3 total, 3 passed, 0 failed
+-Time:  34ms
++Time:  36ms
+ ============================================================
+ 
+ All tests passed! ✨
+@@ -12,7 +12,7 @@ All tests passed! ✨
+ Test Results
+ ============================================================
+ Tests: 2 total, 2 passed, 0 failed
+-Time:  12ms
++Time:  10ms
+ ============================================================
+ 
+ All tests passed! ✨
+diff --git a/.loop-engineering/iterations/003/context.md b/.loop-engineering/iterations/003/context.md
+index cd11158..ff73a39 100644
+--- a/.loop-engineering/iterations/003/context.md
++++ b/.loop-engineering/iterations/003/context.md
+@@ -1,12 +1,14 @@
+ # Context
+ 
+ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+-- git_head: 35b2a8a
++- git_head: 6dc0b9b
+ - changed_files:
+   - .loop-engineering/iterations/001/context.md
+   - .loop-engineering/iterations/001/diff.patch
+   - .loop-engineering/iterations/001/eval.log
+   - .loop-engineering/iterations/001/gate-diff_check.log
+   - .loop-engineering/iterations/001/gate-release_quality.log
+-  - .loop-engineering/iterations/001/verdict.yml
++  - .loop-engineering/iterations/002/context.md
++  - .loop-engineering/iterations/002/diff.patch
+   - .loop-engineering/ledger.tsv
++  - .loop-engineering/loop.yml
+diff --git a/.loop-engineering/iterations/003/diff.patch b/.loop-engineering/iterations/003/diff.patch
+index c270e35..3fbefa0 100644
+--- a/.loop-engineering/iterations/003/diff.patch
++++ b/.loop-engineering/iterations/003/diff.patch
+@@ -1,121 +0,0 @@
+-diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+-index 1cc5e61..255c2d0 100644
+---- a/.loop-engineering/iterations/001/context.md
+-+++ b/.loop-engineering/iterations/001/context.md
+-@@ -1,6 +1,6 @@
+- # Context
+- 
+- - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+--- git_head: unknown
+-+- git_head: 35b2a8a
+- - changed_files:
+-   - none
+-diff --git a/.loop-engineering/iterations/001/diff.patch b/.loop-engineering/iterations/001/diff.patch
+-index e69de29..3699562 100644
+---- a/.loop-engineering/iterations/001/diff.patch
+-+++ b/.loop-engineering/iterations/001/diff.patch
+-@@ -0,0 +1,12 @@
+-+diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+-+index 1cc5e61..255c2d0 100644
+-+--- a/.loop-engineering/iterations/001/context.md
+-++++ b/.loop-engineering/iterations/001/context.md
+-+@@ -1,6 +1,6 @@
+-+ # Context
+-+ 
+-+ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+-+-- git_head: unknown
+-++- git_head: 35b2a8a
+-+ - changed_files:
+-+   - none
+-diff --git a/.loop-engineering/iterations/001/eval.log b/.loop-engineering/iterations/001/eval.log
+-index 496f814..bc54c68 100644
+---- a/.loop-engineering/iterations/001/eval.log
+-+++ b/.loop-engineering/iterations/001/eval.log
+-@@ -5,8 +5,8 @@ $ bash scripts/release_quality_gate.sh
+- ============================================================
+- Test Results
+- ============================================================
+--Tests: 2 total, 2 passed, 0 failed
+--Time:  23ms
+-+Tests: 3 total, 3 passed, 0 failed
+-+Time:  72ms
+- ============================================================
+- 
+- All tests passed! ✨
+-@@ -15,18 +15,14 @@ All tests passed! ✨
+- Test Results
+- ============================================================
+- Tests: 2 total, 2 passed, 0 failed
+--Time:  11ms
+-+Time:  16ms
+- ============================================================
+- 
+- All tests passed! ✨
+- Mistral offline release gate: PASS (2 deterministic test files)
+- gate release_quality: pass
+--gate php_tests: skipped (no changed files matched)
+--gate node_install: skipped (no changed files matched)
+--gate node_tests: skipped (no changed files matched)
+--gate typecheck: skipped (no changed files matched)
+--gate build: skipped (no changed files matched)
+- 
+- ## gate: diff_check
+- $ git diff --check
+--gate diff_check: pass
+-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-++ 
+-diff --git a/.loop-engineering/iterations/001/gate-diff_check.log b/.loop-engineering/iterations/001/gate-diff_check.log
+-index e69de29..c7d2582 100644
+---- a/.loop-engineering/iterations/001/gate-diff_check.log
+-+++ b/.loop-engineering/iterations/001/gate-diff_check.log
+-@@ -0,0 +1,2 @@
+-+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
+-++ 
+-diff --git a/.loop-engineering/iterations/001/gate-release_quality.log b/.loop-engineering/iterations/001/gate-release_quality.log
+-index b86a10e..a76a75f 100644
+---- a/.loop-engineering/iterations/001/gate-release_quality.log
+-+++ b/.loop-engineering/iterations/001/gate-release_quality.log
+-@@ -2,8 +2,8 @@
+- ============================================================
+- Test Results
+- ============================================================
+--Tests: 2 total, 2 passed, 0 failed
+--Time:  23ms
+-+Tests: 3 total, 3 passed, 0 failed
+-+Time:  72ms
+- ============================================================
+- 
+- All tests passed! ✨
+-@@ -12,7 +12,7 @@ All tests passed! ✨
+- Test Results
+- ============================================================
+- Tests: 2 total, 2 passed, 0 failed
+--Time:  11ms
+-+Time:  16ms
+- ============================================================
+- 
+- All tests passed! ✨
+-diff --git a/.loop-engineering/iterations/001/verdict.yml b/.loop-engineering/iterations/001/verdict.yml
+-index ebbbe06..5eace62 100644
+---- a/.loop-engineering/iterations/001/verdict.yml
+-+++ b/.loop-engineering/iterations/001/verdict.yml
+-@@ -1,6 +1,6 @@
+- iteration: 1
+--verdict: success
+--progress: 1
+--required_failures: 0
+-+verdict: failed
+-+progress: 0
+-+required_failures: 1
+- external_blockers: 0
+--stop_reason: "success: required gates passed"
+-+stop_reason: "required gate failed"
+-diff --git a/.loop-engineering/ledger.tsv b/.loop-engineering/ledger.tsv
+-index a287f34..3319dea 100644
+---- a/.loop-engineering/ledger.tsv
+-+++ b/.loop-engineering/ledger.tsv
+-@@ -1,2 +1,4 @@
+- iteration	action	verdict	progress	evidence	justification
+- 001	configured-gates	success	1	iterations/001/eval.log	success: required gates passed
+-+001	configured-gates	failed	0	iterations/001/eval.log	required gate failed
+-+002	configured-gates	failed	0	iterations/002/eval.log	required gate failed
 diff --git a/.loop-engineering/ledger.tsv b/.loop-engineering/ledger.tsv
-index a287f34..3319dea 100644
+index ff2328f..e6c95e0 100644
 --- a/.loop-engineering/ledger.tsv
 +++ b/.loop-engineering/ledger.tsv
-@@ -1,2 +1,4 @@
- iteration	action	verdict	progress	evidence	justification
- 001	configured-gates	success	1	iterations/001/eval.log	success: required gates passed
+@@ -3,3 +3,5 @@ iteration	action	verdict	progress	evidence	justification
+ 001	configured-gates	failed	0	iterations/001/eval.log	required gate failed
+ 002	configured-gates	failed	0	iterations/002/eval.log	required gate failed
+ 003	configured-gates	failed	0	iterations/003/eval.log	required gate failed
 +001	configured-gates	failed	0	iterations/001/eval.log	required gate failed
 +002	configured-gates	failed	0	iterations/002/eval.log	required gate failed
+diff --git a/.loop-engineering/loop.yml b/.loop-engineering/loop.yml
+index cff4787..6a1d0ce 100644
+--- a/.loop-engineering/loop.yml
++++ b/.loop-engineering/loop.yml
+@@ -22,7 +22,7 @@ eval_gates:
+     command: "bash scripts/release_quality_gate.sh"
+     required: true
+   - id: diff_check
+-    command: "git diff --check"
++    command: "git diff --check -- . ':(exclude).loop-engineering/**'"
+     required: true
+ 
+ commit:

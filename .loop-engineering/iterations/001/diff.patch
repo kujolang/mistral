@@ -1,12 +1,43 @@
 diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
-index 1cc5e61..255c2d0 100644
+index 255c2d0..ae4084f 100644
 --- a/.loop-engineering/iterations/001/context.md
 +++ b/.loop-engineering/iterations/001/context.md
 @@ -1,6 +1,6 @@
  # Context
  
  - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
--- git_head: unknown
-+- git_head: 35b2a8a
+-- git_head: 35b2a8a
++- git_head: 6dc0b9b
  - changed_files:
-   - none
+-  - none
++  - .loop-engineering/loop.yml
+diff --git a/.loop-engineering/iterations/001/diff.patch b/.loop-engineering/iterations/001/diff.patch
+index 3699562..e69de29 100644
+--- a/.loop-engineering/iterations/001/diff.patch
++++ b/.loop-engineering/iterations/001/diff.patch
+@@ -1,12 +0,0 @@
+-diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+-index 1cc5e61..255c2d0 100644
+---- a/.loop-engineering/iterations/001/context.md
+-+++ b/.loop-engineering/iterations/001/context.md
+-@@ -1,6 +1,6 @@
+- # Context
+- 
+- - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+--- git_head: unknown
+-+- git_head: 35b2a8a
+- - changed_files:
+-   - none
+diff --git a/.loop-engineering/loop.yml b/.loop-engineering/loop.yml
+index cff4787..6a1d0ce 100644
+--- a/.loop-engineering/loop.yml
++++ b/.loop-engineering/loop.yml
+@@ -22,7 +22,7 @@ eval_gates:
+     command: "bash scripts/release_quality_gate.sh"
+     required: true
+   - id: diff_check
+-    command: "git diff --check"
++    command: "git diff --check -- . ':(exclude).loop-engineering/**'"
+     required: true
+ 
+ commit:
