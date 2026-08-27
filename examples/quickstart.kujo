@@ -1,0 +1,3 @@
+from mistral import create_client, client_chat
+client := create_client({})
+print(client_chat(client, {"model":"mistral-large-latest","messages":[{"role":"user","content":"Hello from Kujo!"}]}))
