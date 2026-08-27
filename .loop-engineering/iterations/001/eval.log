@@ -5,8 +5,8 @@ $ bash scripts/release_quality_gate.sh
 ============================================================
 Test Results
 ============================================================
-Tests: 2 total, 2 passed, 0 failed
-Time:  23ms
+Tests: 3 total, 3 passed, 0 failed
+Time:  72ms
 ============================================================
 
 All tests passed! ✨
@@ -15,18 +15,14 @@ All tests passed! ✨
 Test Results
 ============================================================
 Tests: 2 total, 2 passed, 0 failed
-Time:  11ms
+Time:  16ms
 ============================================================
 
 All tests passed! ✨
 Mistral offline release gate: PASS (2 deterministic test files)
 gate release_quality: pass
-gate php_tests: skipped (no changed files matched)
-gate node_install: skipped (no changed files matched)
-gate node_tests: skipped (no changed files matched)
-gate typecheck: skipped (no changed files matched)
-gate build: skipped (no changed files matched)
 
 ## gate: diff_check
 $ git diff --check
-gate diff_check: pass
+.loop-engineering/iterations/001/diff.patch:7: trailing whitespace.
++ 

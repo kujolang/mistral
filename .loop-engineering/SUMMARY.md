@@ -2,17 +2,17 @@
 
 ## Verdict
 
-success
+blocked
 
 ## Completed
 
-- configured loop run completed through iteration 1
+- configured loop run completed through iteration 3
 
 ## Verification
 
-- passed: release_quality, diff_check
+- passed: release_quality, release_quality, release_quality
 - blocked: none
-- failed: none
+- failed: diff_check, diff_check, diff_check
 
 ## Commits
 
@@ -28,4 +28,4 @@ success
 
 ## Next Start
 
-- success: required gates passed
+- repeated-failure: required gate failed 3 times

@@ -1,0 +1,12 @@
+diff --git a/.loop-engineering/iterations/001/context.md b/.loop-engineering/iterations/001/context.md
+index 1cc5e61..255c2d0 100644
+--- a/.loop-engineering/iterations/001/context.md
++++ b/.loop-engineering/iterations/001/context.md
+@@ -1,6 +1,6 @@
+ # Context
+ 
+ - objective: Build and verify the Mistral provider package through Contract v1, clean-room distribution, and immutable release evidence.
+-- git_head: unknown
++- git_head: 35b2a8a
+ - changed_files:
+   - none
