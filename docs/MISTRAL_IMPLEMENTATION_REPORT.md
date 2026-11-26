@@ -22,15 +22,17 @@ Native client: `src/mistral.kujo`; AI SDK adapter: `src/provider.kujo`; root exp
 
 ## Kujo Requirement / AI SDK Dependency
 
-Kujo >= 1.0.2; `github:kujolang/ai-sdk@v1.1.0`.
+The current source requires Kujo 1.6.0 or later. Kennel pins AI SDK commit `f3126dded28102f40d0ddecd50a559105c66f905`.
 
 ## Authentication / Native Semantics / Streaming
 
-Bearer `MISTRAL_API_KEY`, HTTPS enforcement, URL credential rejection, redaction, protected headers, and OpenAI-compatible SSE parsing. Native response fields remain in raw provider data.
+Native requests use bearer `MISTRAL_API_KEY`, validate HTTPS endpoints and credentials, disable redirects, and cap response bodies at 8 MiB. The SDK driver protects Authorization and Content-Type and restricts requests to the configured origin.
+
+The SSE parser handles split transport chunks and CRLF framing. The driver requires a terminal finish reason and the documented `[DONE]` marker. Native response fields remain in raw provider data after credential redaction. [Mistral Chat API](https://docs.mistral.ai/api/endpoint/chat)
 
 ## Tools / Structured Output / Reasoning / Multimodal / Embeddings
 
-Tools, response format, reasoning, and multimodal request fields remain provider-owned. Vision is declared where model-supported. Embeddings are not claimed.
+The driver preserves full tool turns and typed message parts, forwards `reasoning_effort`, and retains native thinking chunks in the raw result. Vision is available on supported models. Embeddings are exposed through the native client. [Mistral reasoning guide](https://docs.mistral.ai/inference/conversations/reasoning)
 
 ## Usage / Finish Reasons / Errors
 

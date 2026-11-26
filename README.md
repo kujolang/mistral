@@ -8,6 +8,8 @@ Mistral chat, embeddings, and provider-native AI services for Kujo.
 
 ## Install
 
+The current source requires Kujo 1.6.0 or later. Kennel resolves the AI SDK revision pinned in the package manifest. The commands below install the published v0.1.1 release.
+
 ```bash
 kujo run /path/to/kennel/kennel.kujo \
   -- add github:kujolang/mistral@v0.1.1 \
@@ -47,7 +49,7 @@ The native layer preserves Mistral chat responses, tools, structured output, rea
 
 ## Authentication and security
 
-Set `MISTRAL_API_KEY`. Remote endpoints require HTTPS; embedded credentials and secret leakage are rejected.
+Set `MISTRAL_API_KEY`. Configure a trusted HTTPS base URL when using a gateway. Models, chat, and embeddings validate bearer credentials before sending requests and disable redirects. Native responses redact the configured credential, including JSON-escaped echoes.
 
 ## Testing and documentation
 
@@ -56,4 +58,4 @@ bash scripts/release_quality_gate.sh
 bash scripts/verify_installed_package.sh
 ```
 
-The default gate is deterministic and offline. See [docs/](docs/) for implementation and Contract v1 evidence.
+The release gate uses deterministic offline fixtures. The installed-package smoke checks the published tag by default. Set `MISTRAL_REF` to a full commit SHA to check that revision. See [docs/](docs/) for implementation and Contract v1 evidence.

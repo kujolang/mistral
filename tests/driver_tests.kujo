@@ -1,3 +1,80 @@
-test_setup { from src.provider import mistral_provider, mistral_driver }
+test_setup { from src.provider import mistral_provider, mistral_driver; from src.ai_sdk import create_client, chat_completion, chat_completion_stream }
 test "compatible driver preserves Mistral options" { p:=mistral_provider({"model":"llama-test"}); d:=mistral_driver(); e:=d["encode_chat"]({"provider":p,"credential":"secret","messages":[{"role":"user","content":"hi"}],"resolved_options":{"model":"llama-test","reasoning_effort":"high"}}); assert_equal(contains(e["url"],"chat/completions"),1); assert_equal(contains(e["body"],"llama-test"),1) }
 test "driver maps chat response and usage" { r:=mistral_driver()["decode_chat"]({"fallback_model":"m","data":{"model":"m","choices":[{"message":{"content":"ok"},"finish_reason":"stop"}],"usage":{"prompt_tokens":4,"completion_tokens":2,"total_tokens":6}}}); assert_equal(r["output_text"],"ok"); assert_equal(r["usage"]["total_tokens"],6) }
+
+test "driver round trips Mistral tool turns and native controls" {
+    provider := mistral_provider({"base_url":"https://gateway.example/v1/","model":"fixture"})
+    driver := mistral_driver()
+    assert_false(driver["validate"](mistral_provider({"base_url":"http://gateway.example"}))["ok"])
+    messages := [
+        {"role":"assistant","content":null,"tool_calls":[{"id":"call-1","type":"function","function":{"name":"lookup","arguments":"{}"}}]},
+        {"role":"tool","name":"lookup","content":"fixture","tool_call_id":"call-1"},
+    ]
+    context := {
+        "provider":provider,"credential":"fixture-key","messages":messages,
+        "resolved_options":{"model":"fixture","stream":true},
+        "payload":{"model":"fixture","messages":messages,"stream":true,"stream_options":{"include_usage":true}},
+        "options":{"reasoning":{"effort":"high"},"prompt_mode":"reasoning","parallel_tool_calls":false,"provider":{"label":"local"}},
+    }
+    encoded := driver["encode_chat"](context)
+    body := parse_json(encoded["body"])
+    assert_equal(encoded["url"],"https://gateway.example/v1/chat/completions")
+    assert_equal(body["messages"],messages)
+    assert_equal(body["reasoning_effort"],"high")
+    assert_equal(body["prompt_mode"],"reasoning")
+    assert_equal(body["parallel_tool_calls"],false)
+    assert_equal(has_key(body,"provider"),0)
+    assert_equal(has_key(body,"stream_options"),0)
+}
+
+test "SDK normalizes native thinking, tool deltas and terminal Mistral usage" {
+    client := create_client(mistral_provider({"model":"fixture"}),"fixture-token")
+    transport := func(url,options) {
+        assert_equal(options["redirects"],"none")
+        assert_equal(options["_headers"]["Authorization"],"Bearer fixture-token")
+        body := parse_json(options["_body"])
+        assert_equal(body["reasoning_effort"],"medium")
+        assert_equal(has_key(body,"stream_options"),0)
+        return Ok({"_status":200,"_stream_chunks":[
+            "data: {\"id\":\"req-1\",\"choices\":[{\"delta\":{\"content\":[{\"type\":\"thinking\",\"thinking\":[{\"type\":\"text\",\"text\":\"fixture trace\"}]},{\"type\":\"text\",\"text\":\"hello\"}],\"tool_calls\":[{\"index\":0,\"id\":\"call-1\",\"type\":\"function\",\"function\":{\"name\":\"lookup\",\"arguments\":\"{\"}}]}}]}\r\n\r\n",
+            "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"function\":{\"arguments\":\"}\"}}]},\"finish_reason\":\"tool_calls\"}]}\r\n\r\n",
+            "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":4,\"completion_tokens\":3,\"total_tokens\":7,\"completion_tokens_details\":{\"reasoning_tokens\":1}}}\r\n\r\n",
+            "data: [DONE]\r\n\r\n"
+        ]})
+    }
+    result := chat_completion_stream(client,[{"role":"user","content":"hello"}],{"transport":transport,"max_retries":0,"reasoning_effort":"medium"},null)
+    assert_true(result["ok"])
+    assert_equal(result["request_id"],"req-1")
+    assert_equal(result["output_text"],"hello")
+    assert_equal(result["finish_reason"],"tool_calls")
+    assert_equal(result["tool_calls"][0]["function"]["arguments"],"{}")
+    assert_equal(result["usage"]["total_tokens"],7)
+    assert_equal(result["usage"]["reasoning_tokens"],1)
+    assert_equal(result["raw"]["stream_events"][0]["choices"][0]["delta"]["content"][0]["type"],"thinking")
+}
+
+test "SDK validates Mistral schema output and preserves typed answer chunks" {
+    client := create_client(mistral_provider({"model":"fixture"}),"fixture-token")
+    transport := func(url,options) {
+        body := parse_json(options["_body"])
+        assert_equal(body["response_format"]["json_schema"]["schema"]["type"],"object")
+        message := {"content":[{"type":"thinking","thinking":[{"type":"text","text":"fixture trace"}]},{"type":"text","text":"{\"name\":\"fixture\"}"}],"tool_calls":null}
+        return Ok({"_status":200,"_body":to_json({"id":"req-1","choices":[{"message":message,"finish_reason":"stop"}]})})
+    }
+    schema := {"type":"object","properties":{"name":{"type":"string"}},"required":["name"]}
+    options := {"transport":transport,"max_retries":0,"response_format":{"type":"json_schema","json_schema":{"name":"fixture","schema":schema}}}
+    result := chat_completion(client,[{"role":"user","content":"Return a JSON document."}],options)
+    assert_true(result["ok"])
+    assert_equal(result["output_text"],"{\"name\":\"fixture\"}")
+    assert_equal(result["tool_calls"],[])
+}
+
+test "driver rejects partial streams and recognizes native HTTP error codes" {
+    driver := mistral_driver()
+    assert_false(driver["decode_chat"]({"data":{"choices":[]}})["ok"])
+    assert_false(driver["decode_stream"]({"body_text":"data: {\"choices\":[{\"finish_reason\":\"stop\"}]}\n\n"})["ok"])
+    assert_false(driver["decode_stream"]({"body_text":"data: {\"choices\":[]}\n\ndata: [DONE]\n\n"})["ok"])
+    response := driver["decode_error"]({"status_code":401,"data":{"object":"error","message":"invalid key","code":"invalid_api_key"}})
+    assert_equal(response["category"],"auth")
+    assert_equal(response["provider_code"],"invalid_api_key")
+}
