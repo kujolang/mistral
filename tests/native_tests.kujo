@@ -1,4 +1,78 @@
-test_setup { from src.mistral import create_client, client_chat, client_embeddings, parse_stream }
+test_setup { from src.mistral import create_client, client_chat, client_embeddings, client_models, parse_stream }
 test "client validates host and bearer auth" { c:=create_client({"api_key":"secret","transport":func(url,o) { assert_equal(o["_headers"]["Authorization"],"Bearer secret"); return Ok({"_status":200,"_body":"{\"choices\":[]}"}) }}); assert_true(client_chat(c,{"model":"mistral-large-latest","reasoning_effort":"high"})["ok"]); assert_true(create_client({"base_url":"http://remote.example"})["validation_error"]!="") }
 test "embeddings preserve native response" { c:=create_client({"api_key":"secret","transport":func(url,o) { assert_equal(contains(url,"/embeddings"),1); return Ok({"_status":200,"_body":"{\"object\":\"list\",\"data\":[{\"embedding\":[0.1]}],\"usage\":{\"prompt_tokens\":2}}"}) }}); assert_true(client_embeddings(c,{"model":"mistral-embed","input":["hello"]})["ok"]) }
 test "stream parser and redaction" { p:=parse_stream(["data: {\"choices\":[{\"delta\":{\"content\":\"A\"}}]}\n\n","data: [DONE]\n\n"],""); assert_true(p["ok"]); assert_equal(len(p["events"]),1); c:=create_client({"api_key":"secret","transport":func(url,o) { return Ok({"_status":401,"_body":"{\"error\":{\"message\":\"secret denied\"}}"}) }}); r:=client_chat(c,{}); assert_equal(contains(r["message"],"secret"),0) }
+
+test "models shares HTTPS and bearer validation and preserves Result" {
+    deny := func(url,options) { return Err("unexpected request") }
+    for config in [
+        {"base_url":42,"api_key":"fixture"},
+        {"base_url":"https://gateway.example:65536/v1","api_key":"fixture"},
+        {"base_url":"https://gateway.example/v1?query","api_key":"fixture"},
+        {"base_url":"https://gateway.example/v1/../","api_key":"fixture"},
+        {"api_key":"fixture\nvalue"},
+        {"api_key":"fixture","timeout":0},
+    ] {
+        config["transport"] := deny
+        match client_models(create_client(config)) {
+            case Err(error): { assert_true(error != "unexpected request") }
+            case Ok(response): { assert_true(false) }
+        }
+    }
+    transport := func(url,options) {
+        assert_equal(url,"https://gateway.example:8443/v1/models")
+        assert_equal(options["method"],"GET")
+        assert_equal(options["redirects"],"none")
+        assert_equal(options["max_response_bytes"],8388608)
+        assert_equal(options["_headers"]["Authorization"],"Bearer fixture-secret")
+        return Ok({"_status":200,"_body":"{\"data\":[{\"id\":\"fixture-secret\"}]}"})
+    }
+    client := create_client({"base_url":"https://gateway.example:8443/v1/","api_key":"fixture-secret","transport":transport})
+    match client_models(client) {
+        case Ok(response): { assert_equal(parse_json(response["_body"])["data"][0]["id"],"[REDACTED]") }
+        case Err(error): { assert_true(false) }
+    }
+}
+
+test "native responses cannot echo the credential in escaped fields or headers" {
+    transport := func(url,options) {
+        return Ok({
+            "_status":200,
+            "_body":"{\"nested\":{\"id\":\"fixture-\\u0073ecret\"}}",
+            "_headers":{"x-fixture-secret":"fixture-secret"},
+        })
+    }
+    result := client_chat(create_client({"api_key":"fixture-secret","transport":transport}),{})
+    assert_true(result["ok"])
+    assert_equal(result["data"]["nested"]["id"],"[REDACTED]")
+    assert_equal(result["response"]["_headers"]["x-[REDACTED]"],"[REDACTED]")
+    assert_equal(contains(to_json(result),"fixture-secret"),0)
+}
+
+test "native surfaces distinguish malformed success and Mistral error envelopes" {
+    malformed := create_client({"api_key":"fixture-secret","transport":func(url,o) {
+        return Ok({"_status":200,"_body":"<html>provider gateway</html>"})
+    }})
+    assert_false(client_chat(malformed,{})["ok"])
+    failing := create_client({"api_key":"fixture-secret","transport":func(url,o) {
+        return Ok({"_status":400,"_body":"{\"object\":\"error\",\"message\":\"fixture-secret rejected\",\"code\":\"invalid_input\"}"})
+    }})
+    result := client_embeddings(failing,{})
+    assert_false(result["ok"])
+    assert_equal(result["status_code"],400)
+    assert_equal(result["message"],"[REDACTED] rejected")
+}
+
+test "SSE framing handles fallback, split line breaks and complete messages" {
+    fallback := ": comment\r\ndata: {\"choices\":\r\ndata: []}\r\n\r\ndata: [DONE]\r\n\r\n"
+    result := parse_stream([],fallback)
+    assert_true(result["complete"])
+    assert_equal(result["events"],[{"choices":[]}])
+    result = parse_stream(["data: {\"choices\":[]}\r","\n\r\ndata: [DONE]\n\n"],"ignored")
+    assert_true(result["ok"])
+    assert_true(result["complete"])
+    assert_false(parse_stream(["data: not-json\n\n"],"")["ok"])
+    assert_false(parse_stream(["data: [1]\n\n"],"")["ok"])
+    assert_false(parse_stream([73],"")["ok"])
+    assert_false(parse_stream(["data: [DONE]\n\ndata: {}\n\n"],"")["ok"])
+}

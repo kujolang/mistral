@@ -1,29 +1,208 @@
-# Native Mistral OpenAI-compatible chat client with Mistral reasoning and tool controls.
-func get(o,k,f) { if type(o)=="dict" && has_key(o,k) { return o[k] }; return f }
-func trim_slash(v) { r:=trim(v); while ends_with(r,"/") { r:=substring(r,0,len(r)-1) }; return r }
-func redact(v,s) { if type(v)=="string" && type(s)=="string" && s!="" { return replace(v,s,"[REDACTED]") }; return v }
-func valid(v) { if type(v)!="string" || trim(v)=="" { return "Mistral base URL must be non-empty." }; r:=trim_slash(v); p:=split(r,"/"); if len(p)<3 || contains(r,"@") || contains(r,"?") || contains(r,"#") || contains(r,"\r") || contains(r,"\n") { return "Mistral base URL is unsafe." }; if starts_with(lower(r),"https://") { return "" }; return "Mistral remote endpoints must use HTTPS." }
-func create_client_impl(config) { if type(config)!="dict" { config:={} }; base:=trim_slash(get(config,"base_url","https://api.mistral.ai/v1")); key:=get(config,"api_key",null); if type(key)=="null" { key:=env("MISTRAL_API_KEY") }; if type(key)!="string" { key:="" }; return {"base_url":base,"api_key":key,"timeout":get(config,"timeout",60.0),"transport":get(config,"transport",null),"validation_error":valid(base)} }
-func transport_for(c) { if type(get(c,"transport",null))=="function" { return c["transport"] }; return http_request }
-func call(c,path,payload,stream) {
-	if c["validation_error"]!="" { return {"ok":false,"message":c["validation_error"]} }
-	if c["api_key"]=="" { return {"ok":false,"message":"Mistral API key is required."} }
-	h:={"Authorization":"Bearer "+c["api_key"],"Content-Type":"application/json"}
-	o:={"method":"POST","timeout":c["timeout"],"_headers":h}; if type(payload)=="dict" { o["_body"]:=to_json(payload) }; if stream { o["stream"]:=true }
-	t:=transport_for(c); result:=t(c["base_url"]+path,o)
-	match result {
-		case Err(e): { return {"ok":false,"message":redact(to_string(e),c["api_key"])} }
-		case Ok(r): {
-			s:=get(r,"_status",0); b:=get(r,"_body",""); d:=null; try { d:=parse_json(b) } except e { d:=null }
-			if s<200 || s>299 { return {"ok":false,"status_code":s,"message":redact(to_string(get(get(d,"error",{}),"message","Mistral request failed")),c["api_key"]),"error_body":redact(b,c["api_key"])} }
-			return {"ok":true,"status_code":s,"data":d,"response":r}
-		}
-	}
+CHAT_BASE := "https://api.mistral.ai/v1"
+
+func get(value, key, fallback) {
+    if type(value) == "dict" && has_key(value, key) { return value[key] }
+    return fallback
 }
-export create_client:=create_client_impl
-export chat:=func(options) { return call(create_client_impl({}),"/chat/completions",options,false) }
-export client_chat:=func(c,options) { return call(c,"/chat/completions",options,false) }
-export client_models:=func(c) { t:=transport_for(c); return t(c["base_url"]+"/models",{"method":"GET","timeout":c["timeout"],"_headers":{"Authorization":"Bearer "+c["api_key"]}}) }
-export client_embeddings:=func(c,options) { return call(c,"/embeddings",options,false) }
-export embeddings:=func(options) { return client_embeddings(create_client_impl({}),options) }
-export parse_stream:=func(chunks,body) { combined:=""; if type(chunks)=="array" { for c in chunks { combined:=combined+c } } else { combined:=body }; events:=[]; for block in split(combined,"\n\n") { for line in split(block,"\n") { if starts_with(line,"data:") { raw:=trim(substring(line,5,len(line))); if raw=="[DONE]" { continue }; d:=null; try { d:=parse_json(raw) } except e { return {"ok":false,"events":[]} }; events=push(events,d) } } }; return {"ok":true,"events":events} }
+
+func endpoint(value) {
+    if type(value) != "string" { return "" }
+    url := trim(value)
+    if regex_match(url, "[\\x00-\\x20\\x7f@?#\\\\]") { return "" }
+    if !regex_match(lower(url), "^https://(?:[a-z0-9][a-z0-9.-]*|\\[[0-9a-f:.]+\\])(?::[0-9]{1,5})?(?:/[a-z0-9._~/-]*)?$") { return "" }
+    for part in split(url,"/") {
+        if part == "." || part == ".." { return "" }
+    }
+    authority := split(url,"/")[2]
+    port := regex_find_all(authority,":[0-9]{1,5}$")
+    if len(port) > 0 {
+        number := to_int(substring(port[0],1,len(port[0])))
+        if number < 1 || number > 65535 { return "" }
+    }
+    return regex_replace(url, "/+$", "")
+}
+
+func redact(text, key) {
+    if type(text) == "string" && key != "" { return replace(text, key, "[REDACTED]") }
+    return text
+}
+
+func redact_value(value, key) {
+    if key == "" { return value }
+    if type(value) == "string" { return redact(value,key) }
+    if type(value) != "dict" && type(value) != "array" { return value }
+    encoded := to_json(value)
+    key_literal := to_json(key)
+    if contains(encoded,substring(key_literal,1,len(key_literal)-1)) == 0 { return value }
+    // Inspect JSON text tokens so numbers and nested structure keep their types.
+    pattern := "\"(?:[^\"\\\\]|\\\\.)*\""
+    literals := regex_split(encoded,pattern)
+    tokens := regex_find_all(encoded,pattern)
+    output := range(0,2*len(tokens)+1)
+    for index in range(0,len(tokens)) {
+        output[2*index] = literals[index]
+        output[2*index+1] = to_json(redact(parse_json(tokens[index]),key))
+    }
+    output[2*len(tokens)] = literals[len(tokens)]
+    return parse_json(join(output,""))
+}
+
+func redact_wire(text, key) {
+    if type(text) != "string" { return text }
+    if contains(text,key) == 0 && contains(text,"\\") == 0 { return text }
+    // Parse JSON strings before redaction so escaped credential values cannot
+    // surface when a consumer decodes the raw response.
+    try {
+        data := parse_json(text)
+        safe_data := redact_value(data,key)
+        if safe_data != data { return to_json(safe_data) }
+    } except error { }
+    encoded_key := to_json(key)
+    escaped_key := substring(encoded_key,1,len(encoded_key)-1)
+    return redact(redact(text,escaped_key),key)
+}
+
+func create_client_impl(config) {
+    base := endpoint(get(config,"base_url",CHAT_BASE))
+    key := get(config,"api_key",null)
+    if key == null { key = env("MISTRAL_API_KEY") }
+    if type(key) != "string" { key = "" }
+    problem := ""
+    if base == "" { problem = "Mistral base URL must be HTTPS." }
+    return {"base_url":base,"api_key":key,"timeout":get(config,"timeout",60.0),"transport":get(config,"transport",null),"validation_error":problem}
+}
+
+func request(client, path, method, payload) {
+    base := endpoint(get(client,"base_url",""))
+    if base == "" { return Err("Mistral base URL must be HTTPS.") }
+    key := get(client,"api_key","")
+    if type(key) != "string" || trim(key) == "" || regex_match(key,"[\\x00-\\x20\\x7f]") {
+        return Err("Mistral API key is required and must be a valid bearer value.")
+    }
+    timeout := get(client,"timeout",60.0)
+    if (type(timeout) != "int" && type(timeout) != "float") || timeout <= 0 || timeout - timeout != 0 {
+        return Err("Mistral timeout must be a positive finite number.")
+    }
+    if method == "POST" && type(payload) != "dict" { return Err("Mistral request must be an object.") }
+    transport := get(client,"transport",null)
+    if type(transport) != "function" { transport = http_request }
+    headers := {"Authorization":"Bearer "+key}
+    if method == "POST" { headers["Content-Type"] := "application/json" }
+    options := {"method":method,"timeout":timeout,"redirects":"none","max_response_bytes":8388608,"_headers":headers}
+    if type(payload) == "dict" { options["_body"] := to_json(payload) }
+    result := transport(base+path,options)
+    match result {
+        case Err(error): { return Err(redact(to_string(error),key)) }
+        case Ok(response): {
+            status := get(response,"_status",0)
+            if type(status) != "int" || status < 100 || status > 599 { return Err("Mistral returned an invalid HTTP status.") }
+            body := get(response,"_body","")
+            if type(body) != "string" || byte_length(body) > 8388608 { return Err("Mistral returned an invalid or oversized HTTP body.") }
+            safe_response := {}
+            for name in keys(response) {
+                safe_name := name
+                if name != "_body" && name != "_status" && name != "_headers" { safe_name = redact(name,key) }
+                if name == "_body" { safe_response[safe_name] := redact_wire(response[name],key) }
+                else { safe_response[safe_name] := redact_value(response[name],key) }
+            }
+            return Ok(safe_response)
+        }
+        case other: { return Err("Mistral transport must return a Result.") }
+    }
+}
+
+
+func provider_error(data) {
+    if type(data) != "dict" { return false }
+    return has_key(data,"error") || get(data,"object","") == "error"
+        || (type(get(data,"message",null)) == "string" && (has_key(data,"type") || has_key(data,"code")))
+}
+
+func failure_message(data) {
+    nested := get(data,"error",data)
+    message := get(nested,"message",nested)
+    if type(message) == "string" && message != "" { return message }
+    return "Mistral request failed."
+}
+
+func response_map(result) {
+    match result {
+        case Err(error): { return {"ok":false,"message":to_string(error)} }
+        case Ok(response): {
+            status := response["_status"]
+            body := get(response,"_body","")
+            data := null
+            try { data := parse_json(body) } except error { data := null }
+            if status < 200 || status > 299 || provider_error(data) {
+                return {"ok":false,"status_code":status,"message":failure_message(data),"error_body":body}
+            }
+            if type(data) != "dict" {
+                return {"ok":false,"status_code":status,"message":"Mistral returned a malformed JSON response."}
+            }
+            return {"ok":true,"status_code":status,"data":data,"response":response}
+        }
+    }
+}
+
+func chat_impl(client,options) {
+    return response_map(request(client,"/chat/completions","POST",options))
+}
+
+func embeddings_impl(client,options) {
+    return response_map(request(client,"/embeddings","POST",options))
+}
+
+func parse_stream_impl(chunks, body) {
+    failed := {"ok":false,"events":[],"complete":false}
+    combined := body
+    if type(chunks) == "array" && len(chunks) > 0 {
+        if len(chunks) > 65536 { return failed }
+        size := 0
+        for chunk in chunks {
+            if type(chunk) != "string" { return failed }
+            size = size + byte_length(chunk)
+            if size > 8388608 { return failed }
+        }
+        combined = join(chunks,"")
+    }
+    if type(combined) != "string" || byte_length(combined) > 8388608 { return failed }
+    if contains(combined,"\r") > 0 { combined = replace(replace(combined,"\r\n","\n"),"\r","\n") }
+    blocks := split(combined,"\n\n")
+    if len(blocks) > 65536 { return failed }
+    events := range(0,len(blocks))
+    count := 0
+    complete := false
+    for block in blocks {
+        data := ""
+        if starts_with(block,"data:") && contains(block,"\n") == 0 {
+            data = trim(substring(block,5,len(block)))
+        } else {
+            lines := []
+            for line in split(block,"\n") {
+                if starts_with(line,"data:") { lines = push(lines,substring(line,5,len(line))) }
+            }
+            data = trim(join(lines,"\n"))
+        }
+        if data == "" { continue }
+        if complete { return failed }
+        if data == "[DONE]" { complete = true; continue }
+        parsed := null
+        try { parsed := parse_json(data) } except error { return failed }
+        if type(parsed) != "dict" { return failed }
+        events[count] = parsed
+        count = count + 1
+    }
+    return {"ok":true,"events":slice(events,0,count),"complete":complete}
+}
+
+export create_client := create_client_impl
+export chat := func(options) { return chat_impl(create_client_impl({}),options) }
+export client_chat := chat_impl
+export client_models := func(client) { return request(client,"/models","GET",null) }
+export client_embeddings := embeddings_impl
+export embeddings := func(options) { return embeddings_impl(create_client_impl({}),options) }
+export parse_stream := parse_stream_impl
+export mistral_endpoint := endpoint
+export mistral_base := CHAT_BASE
+export mistral_provider_error := provider_error
+export mistral_failure_message := failure_message
